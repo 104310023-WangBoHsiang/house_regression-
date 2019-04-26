@@ -23,23 +23,6 @@ from sklearn.model_selection import train_test_split
 df_train = pd.read_csv("D:/download/database/train-v3.csv")
 df_valid = pd.read_csv('D:/download/database/valid-v3.csv')
 df_test = pd.read_csv('D:/download/database/test-v3.csv')
-#print(df_test.shape)
-#print(df_train.columns)
-
-
-#df = pd.DataFrame(df,columns=column_names)
-#dataset_train = df_train.values
-#dataset_valid = df_valid.values
-
-#print(df)
-
-#X_train = dataset_train[:, 2:23]
-#Y_train = dataset_train[:, 1]
-#X_test = dataset_valid[:, 2:23]
-#Y_test = dataset_valid[:, 1]
-
-#print ("X: ", X_train[:,20])
-#print ("Y: ", X_valid[:,20])
 
 df_train.head()
 
@@ -60,14 +43,6 @@ plt.figure(figsize = (16,10))
 sns.set(font_scale=1.25)
 hm = sns.heatmap(cm, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cols.values, xticklabels=cols.values)
 plt.show()
-
-#missing data
-#total = df.isnull().sum().sort_values(ascending=False)
-#percent = (df.isnull().sum()/df.isnull().count()).sort_values(ascending=False)
-#missing_data = pd.concat([total, percent], axis=1, keys=['Total', 'Percent'])
-#missing_data.head(20)
-
-#, 'view', 'sqft_basement', 'lat', 'bedrooms','waterfront','floors','yr_renovated','sqft_lot'
 
 
 cols = ['price','bedrooms',
@@ -104,12 +79,6 @@ Y_train = df_train['price'].values
 
 Y_valid = df_valid['price'].values
 
-#seed = 7
-#np.random.seed(seed)
-# split into 67% for train and 33% for test
-#X_train, X_test, y_train, y_test = train_test_split(X_train, y, test_size=0.35, random_state=seed)
-
-#X_train.shape[1]
 
 # Define the neural network
 from keras.models import Sequential
@@ -124,18 +93,21 @@ def create_model():
     model = Sequential()
 
     model.add(Dense(17, input_dim=X_train.shape[1], activation='relu'))
-    #model.add(BatchNormalization())
-    #model.add(Dropout(0.01))
+    model.add(BatchNormalization())
+    #model.add(Dropout(0.1))
     model.add(Dense(64, activation='relu'))
     model.add(BatchNormalization())
-    #model.add(Dropout(0.01))
+    model.add(Dropout(0.1))
     model.add(Dense(128, activation='relu'))
     model.add(BatchNormalization())
-       
+    model.add(Dropout(0.1))    
+    model.add(Dense(256, activation='relu'))
+    model.add(BatchNormalization())      
+    
     model.add(Dense(1))
     
     # Compile model
-    Adadelta = optimizers.Adadelta(lr=1)
+    Adadelta = optimizers.Adadelta(lr=5)
     
     model.compile(optimizer = Adadelta , loss = 'mean_absolute_error', metrics =[metrics.mae])
     return model
@@ -192,20 +164,8 @@ plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.show()
-'''
-# Print results in CSV format and upload to Kaggle
-ynew = model.predict(X_test, batch_size=256, verbose=1, steps=None)
 
-with open('D:/download/database/pred_results.csv', 'w') as f:
-    f.write('Id,price\n')
-    for i in range(len(X_test)):
-        f.write(str(i+1) + ',' + ynew[i] + '\n')
-'''
-
-
-
-
-##################################################################
+##############################################################################
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error,median_absolute_error
 
@@ -237,10 +197,8 @@ params={
 dtrain=xgb.DMatrix(X_train,label=Y_train)
 dvalid=xgb.DMatrix(X_valid, Y_valid)
 dtest=xgb.DMatrix(X_test)
-#booster = xgb.train(params,dtrain,num_boost_round=1000000,early_stopping_rounds=200,evals=[(dvalid,"vaild1")],verbose_eval=1,xgb_model='D:/download/database/model.h5' )
 regr.fit(X_train, Y_train, early_stopping_rounds=1000, eval_metric="mae", eval_set=[(X_valid, Y_valid)], verbose=True,)
-#booster.save_model('D:/download/database/model.h5')
-#ynew = booster.predict(dtest)
+
 
 y_pred_62334 = regr.predict(X_test, ntree_limit=regr.best_ntree_limit)
 y_pred_ = regr.predict(X_test)
